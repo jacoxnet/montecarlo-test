@@ -55,12 +55,14 @@ def generate_jim_runs(initial_withdrawal):
             balance = end_balance
     return runs
 
-def binary_search(target_success_rate, lower_limit, upper_limit, tolerance=1.0):
+def binary_search(target_success_rate, lower_limit, upper_limit, tolerance=0.001):
     while upper_limit - lower_limit > tolerance:
         mid = (upper_limit + lower_limit) / 2
         the_runs = generate_jim_runs(mid)
         success_rate = np.count_nonzero(the_runs[:, NUM_YEARS - 1] >= 0) / NUM_RUNS
         print(f"DEBUG: testing={dollar_format(mid)}, success_rate={percent_format(success_rate)}")
+        if abs(success_rate - target_success_rate) < tolerance:
+            break
         if success_rate < target_success_rate:
             upper_limit = mid
         else:
