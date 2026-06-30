@@ -1,20 +1,26 @@
-import numpy as np
-
 '''
 Implements a monte-carlo simulation of a retirement plan with 
 specified parameters
 '''
-FORMATD = "${:,.2f}"
 
-DETERMINISTIC = False
-INITIAL_WEALTH = 1000000
-INITIAL_WITHDRAWAL_RATE = 0.04
-AVERAGE_RETURN = 0.06
-STD_RETURN = 0.09
-INFLATION_RATE = 0.025
-STD_INFLATION = 0.015
-NUM_RUNS = 5000
-NUM_YEARS = 30
+import numpy as np
+from params import DETERMINISTIC, INITIAL_WEALTH, AVERAGE_RETURN, STD_RETURN, INFLATION_RATE, STD_INFLATION, NUM_RUNS, NUM_YEARS
+
+FORMATD = "${:,.0f}"
+
+def print_stats(the_runs):
+    print("\nRuns Final Values:")
+    # print out the_runs
+    # for i in range(NUM_RUNS):
+        # print (FORMATD.format(the_runs[i][NUM_YEARS - 1]))
+    print("Run Mean:", dollar_format(np.mean(the_runs[:, NUM_YEARS - 1])))
+    print("Run Median:", dollar_format(np.median(the_runs[:, NUM_YEARS - 1])))
+    print("Run 10% percentile:", dollar_format(np.percentile(the_runs[:, NUM_YEARS - 1], 10)))
+    print("Run 25% percentile:", dollar_format(np.percentile(the_runs[:, NUM_YEARS - 1], 25)))
+    print("Run Min:", dollar_format(np.min(the_runs[:, NUM_YEARS - 1])))
+    print("Run Max:", dollar_format(np.max(the_runs[:, NUM_YEARS - 1])))
+    print("Run FV less than zero:", percent_format((np.count_nonzero(the_runs[:, NUM_YEARS - 1] < 0))/NUM_RUNS))
+
 
 rng = np.random.default_rng()
 if DETERMINISTIC:
@@ -32,11 +38,11 @@ def dollar_format(value):
 def percent_format(value):
     return "{:.2%}".format(value)
 
-def generate_jim_runs(): 
+def generate_jim_runs(initial_withdrawal): 
     runs = np.zeros((NUM_RUNS, NUM_YEARS), dtype=float)
     for i in range(NUM_RUNS):
         balance = INITIAL_WEALTH
-        withdrawal = INITIAL_WITHDRAWAL_RATE * INITIAL_WEALTH
+        withdrawal = initial_withdrawal
         for j in range(NUM_YEARS):
             # no earnings if balance is zero or negative
             earnings = balance * returns[i][j] if balance > 0 else 0
@@ -49,16 +55,14 @@ def generate_jim_runs():
             balance = end_balance
     return runs
 
-if __name__ == "__main__":
-    the_runs = generate_jim_runs()
-    print("\nJim's Runs Final Values:")
-    for i in range(NUM_RUNS):
-        pass
-        # print (FORMATD.format(the_runs[i][NUM_YEARS - 1]))
-    print("Run Mean:", dollar_format(np.mean(the_runs[:, NUM_YEARS - 1])))
-    print("Run Median:", dollar_format(np.median(the_runs[:, NUM_YEARS - 1])))
-    print("Run 10% percentile:", dollar_format(np.percentile(the_runs[:, NUM_YEARS - 1], 10)))
-    print("Run 25% percentile:", dollar_format(np.percentile(the_runs[:, NUM_YEARS - 1], 25)))
-    print("Run Min:", dollar_format(np.min(the_runs[:, NUM_YEARS - 1])))
-    print("Run Max:", dollar_format(np.max(the_runs[:, NUM_YEARS - 1])))
-    print("Run FV less than zero:", percent_format((np.count_nonzero(the_runs[:, NUM_YEARS - 1] < 0))/NUM_RUNS))
+def binary_search(target_success_rate, lower_limit, upper_limit, tolerance=1.0):
+    while upper_limit - lower_limit > tolerance:
+        mid = (upper_limit + lower_limit) / 2
+        the_runs = generate_jim_runs(mid)
+        success_rate = np.count_nonzero(the_runs[:, NUM_YEARS - 1] >= 0) / NUM_RUNS
+        print(f"DEBUG: testing={dollar_format(mid)}, success_rate={percent_format(success_rate)}")
+        if success_rate < target_success_rate:
+            upper_limit = mid
+        else:
+            lower_limit = mid
+    return mid
