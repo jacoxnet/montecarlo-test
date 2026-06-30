@@ -6,20 +6,25 @@ specified parameters
 '''
 FORMATD = "${:,.2f}"
 
+DETERMINISTIC = False
 INITIAL_WEALTH = 1000000
 INITIAL_WITHDRAWAL_RATE = 0.04
 AVERAGE_RETURN = 0.06
 STD_RETURN = 0.09
 INFLATION_RATE = 0.025
 STD_INFLATION = 0.015
-NUM_RUNS = 100000
+NUM_RUNS = 5000
 NUM_YEARS = 30
 
 rng = np.random.default_rng()
-# generate matrix of returns
-returns = rng.normal(AVERAGE_RETURN, STD_RETURN, size=(NUM_RUNS, NUM_YEARS))
-# generate matrix of inflation - cumulative inflation is applied to the withdrawal rate
-inflation = rng.normal(INFLATION_RATE, STD_INFLATION, size=(NUM_RUNS, NUM_YEARS))
+if DETERMINISTIC:
+    # generate deterministic numbers for returns and inflation
+    returns = np.ones((NUM_RUNS, NUM_YEARS)) * AVERAGE_RETURN
+    inflation = np.ones((NUM_RUNS, NUM_YEARS)) * INFLATION_RATE
+else:
+    # generate random returns for normal distributions for returns and inflation
+    returns = rng.normal(AVERAGE_RETURN, STD_RETURN, size=(NUM_RUNS, NUM_YEARS))
+    inflation = rng.normal(INFLATION_RATE, STD_INFLATION, size=(NUM_RUNS, NUM_YEARS))
 
 def dollar_format(value):
     return FORMATD.format(value)
